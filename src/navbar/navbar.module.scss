@@ -1,0 +1,22 @@
+.navbar {
+  font-size: 1rem;
+  color: black;
+  font-family: 'Inter';
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  margin-top: 12px;
+  
+}
+
+.beroelogo {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  margin: 12px;
+  background-image: url('../../content/images/beroe-white-logo.png');
+  background-repeat: no-repeat;
+  height: 55px;
+  width: 159px;
+  background-size: 100%;
+}

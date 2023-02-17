@@ -1,0 +1,43 @@
+.checkoutBtn {
+  // rounded-md
+  // border
+  // border-transparent
+  // bg-indigo-600
+  // px-4
+  // py-2
+  // text-base
+  // font-medium
+  // text-white
+  // shadow-sm
+  // hover:bg-indigo-700
+  // focus:outline-none
+  // focus:ring-2
+  // focus:ring-indigo-500
+  // focus:ring-offset-2
+  // sm:text-sm
+  border: 1px solid #5045E5;
+  color:white;
+  font-weight: 500;
+  --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --tw-shadow-colored: 0 1px 2px 0 var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+  font-size: 1rem;
+  line-height: 1.5rem;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  border-width: 1px;
+  width: 100% !important;
+  box-shadow: none;
+  color: #FFFFFF;
+  font-family: Inter;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  line-height: 24px;
+  background: linear-gradient(315deg, #544AD8 0%, #804CD9 100%);
+  border-radius: 24px;
+  cursor: pointer;
+  background-image: ''!important;
+}

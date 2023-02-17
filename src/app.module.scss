@@ -1,0 +1,19 @@
+.content {
+  min-height: 100%;
+  display: grid;
+  grid-template-rows: 1fr auto; 
+  padding: 12px;
+}
+.contentInside {
+  padding: 25px 25px;
+}
+.footer {
+  grid-row-start: 3;
+  grid-row-end: 3;
+  background: linear-gradient(315deg, #544AD8 0%, #804CD9 100%);
+}
+.navbar {
+  grid-row-start: 1;
+  grid-row-end: 2;
+  background: linear-gradient(315deg, #544AD8 0%, #804CD9 100%);
+}
