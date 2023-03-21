@@ -181,7 +181,7 @@ export const PaymentForm = () => {
     };
     
     try {
-      fetch('http://localhost:8000/create-checkout-session', requestOptions)
+      fetch('http://localhost:8000/api/create-checkout-session', requestOptions)
        .then((response) => response.text())
        .then((result) => {
         // alert(result)

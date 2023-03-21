@@ -3,6 +3,8 @@ from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
 from fastapi.encoders import jsonable_encoder
 from fastapi.middleware.cors import CORSMiddleware
 
+import calc_amount
+
 app = FastAPI()
 
 import stripe
@@ -28,7 +30,7 @@ templates = Jinja2Templates(directory="templates")
 STRIPE_KEY = os.environ.get("STRIPE_TEST_KEY")
 STRIPE_PRICE_ID = os.environ.get("STRIP_PRICE_ID")
 STRIPE_PRODUCT_ID = os.environ.get('STRIP_PRODUCT_ID')
-YOUR_DOMAIN_LOCAL = 'http://localhost:3000'
+YOUR_DOMAIN_LOCAL = 'http://localhost:9000/'
 YOUR_DOMAIN_PROD = 'http://pay.beroeinc.com'
 CURRENCY_CONVERTER_API = os.environ.get('CURRENCY_CONVERTER_API')
 WEBHOOK_SECRET=os.environ.get("WEBHOOK_SECRET")
@@ -47,6 +49,7 @@ origins = [
     "http://localhost",
     "http://localhost:8080",
     "http://localhost:3000",
+    "http://localhost:9000"
 ]
 
 app.add_middleware(
@@ -69,13 +72,18 @@ async def check_minimum(amount = Body(...)):
   print(j)
   return j
    
-@app.post("/create-checkout-session", response_description="Creating payment session")
+@app.post("/api/create-checkout-session", response_description="Creating payment session")
 async def create_checkout_session(request: Request, form_data = Body(...)):
-  purpose = form_data['purpose']
-  purpose1 = form_data['purpose1']
+  data = form_data
+  amount = calc_amount.CalclulateAmount(data['amount'], data['currency'])
+  amount = amount.calc()
+  print(f"amount is {amount} in currency: {data['currency']}")
+  
+  print(f'what is otherpurpose {data}')
+  purpose = data['purpose']
   def getPurpose():
     if purpose == 'others':
-      return purpose1
+      return data['otherPurpose']
     else:
       return purpose
   print(f'what is other {getPurpose()}')
@@ -84,82 +92,79 @@ async def create_checkout_session(request: Request, form_data = Body(...)):
     
     # *** UNCOMMENT TO CREATE customer id *** 
     # CUSTOMER_ID = stripe.Customer.create(
-    #   email=form_data['email'],
-    #   name=form_data['fullname'],
+    #   email=data['email'],
+    #   name=data['fullname'],
     #   description="My First Test Customer (created for API docs at https://www.stripe.com/docs/api)",
     # )
     
     #  create a price id
     PRICE_ID = stripe.Price.create(
-      currency=form_data['currency'],
-      custom_unit_amount={"enabled": True},
-      product=STRIPE_PRODUCT_ID
+      currency=data['currency'],
+      # custom_unit_amount={"enabled": False},
+      product=STRIPE_PRODUCT_ID,
+      unit_amount=data['amount']
     )
     
     # get checkout URL
     checkout_session = stripe.checkout.Session.create(
-      customer_email=form_data['email'],
+      customer_email=data['email'],
       line_items=[{
-            "currency": form_data['currency'],
-         
-          "quantity": 1,
-          "currency":form_data['currency'],
-          "amount": form_data['amount'] * 100,
-          "name":form_data['fullname'],          
+          # "currency": data['currency'],
+          # "quantity": 1,
+          # "currency":data['currency'],
+          # "amount": amount,  
+          # "name":f'Payment Purpose: {getPurpose()}',
+          # "images": ["https://d1wqzb5bdbcre6.cloudfront.net/f31d1727e1ac68b7d830488eb75640da59049ebeae9bb57e1c298700cc005f86/68747470733a2f2f66696c65732e7374726970652e636f6d2f6c696e6b732f4d44423859574e6a6446387851305a515a5656464d7a45324d45524659334e7966475a735833526c6333526654564532626e685a52575a72596b6b344f454648576d464a53465a4e59554d353030776d4c46694a4152"],
+         "price_data": {
+              "currency": data['currency'],
+              "unit_amount": amount,  # input is in cents
+              "product_data": {
+                  "name": f"{getPurpose()}",
+                  "images": ["https://d1wqzb5bdbcre6.cloudfront.net/f31d1727e1ac68b7d830488eb75640da59049ebeae9bb57e1c298700cc005f86/68747470733a2f2f66696c65732e7374726970652e636f6d2f6c696e6b732f4d44423859574e6a6446387851305a515a5656464d7a45324d45524659334e7966475a735833526c6333526654564532626e685a52575a72596b6b344f454648576d464a53465a4e59554d353030776d4c46694a4152"],
+                  "description":"Beroe - leader in custom analysis and market research. A global leader in intelligence, data, and insights. Our Beroe LiVE.Ai™ platform enables more than 17,000 companies worldwide to make smarter sourcing decisions."
+              },
+          },
+          "quantity": 1
         },
       ],
       mode="payment",
-      success_url=YOUR_DOMAIN_LOCAL + f'/success/{PRICE_ID.id}',
-      cancel_url=YOUR_DOMAIN_LOCAL + '?canceled=true',
+      # success_url=YOUR_DOMAIN_LOCAL + f'/success/{PRICE_ID.i  d}',
+      success_url=f'{YOUR_DOMAIN_LOCAL}' + f'success/{PRICE_ID.id}',
+      cancel_url=f'{YOUR_DOMAIN_LOCAL}' + f'canceled=true',
       invoice_creation={"enabled": True},
-      metadata=form_data
+      metadata=data,
+      custom_fields=[
+        {
+          "key": "message",
+          "label": {"type": "custom", "custom": "Note:"},
+          "type": "text",
+        },
+      ],
       
     )
-    
-    # *** UNCOMMENT this config for editable amount in the checkout page ***
-    # checkout_session = stripe.checkout.Session.create(
-    #   line_items=[
-    #     {
-    #       "quantity": 1,
-    #       "currency":form_data['currency'],
-    #       "adjustable_quantity":{
-    #         "enabled":True,
-    #       },
-    #       "amount": form_data['amount'],
-    #       "name": getPurpose(),
-    #       # "price": 'price_1MZo1fE3160DEcsrQRwTvucP',
-    #     },
-    #   ],
-    #   mode="payment",
-    #   success_url=YOUR_DOMAIN_LOCAL + '?success=true',
-    #   cancel_url=YOUR_DOMAIN_LOCAL + '?canceled=true',
-    #   consent_collection={
-    #     'terms_of_service': 'required',
-    #   },
-    #   customer_email=customer['email']
-      
-    # )
-    
-    
-
     return checkout_session
     
   except Exception as e:
     # print(str(e))
     raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail=str(e))
     
-  # return RedirectResponse(checkout_session.url, status_code=303)
-
 @app.post("/payment-intent", response_description="Creating payment session")
-async def create_payment_intent(request: Request, form_data = Body(...)):
+async def create_payment_intent(form_data = Body(...)):
+  print(type(form_data))
+  print(form_data)
+  data = json.dumps(form_data)
+  dict_data = json.loads(data)
+  amount = calc_amount.CalclulateAmount(dict_data['amount'], dict_data['currency'])
+  amount = amount.calc()
+  print(f"amount is {amount} in currency: {dict_data['currency']}")
   try:
     PAYMENT_INTENT = stripe.PaymentIntent.create(
-      amount=form_data['amount']*100,
-      currency=form_data['currency'],
+      amount=amount,
+      currency=dict_data['currency'],
       automatic_payment_methods={"enabled": False},
-      receipt_email=form_data['email'],
-      statement_descriptor=f"{form_data['purpose']}  {form_data['purpose1']}",
-      metadata=form_data
+      receipt_email=dict_data['email'],
+      statement_descriptor=dict_data['purpose'] if dict_data['purpose'] else dict_data['otherPurpose'],
+      metadata=dict_data
       # confirm=True
     )
     return {
@@ -167,10 +172,10 @@ async def create_payment_intent(request: Request, form_data = Body(...)):
       "msg":PAYMENT_INTENT
     }
   except Exception as e:
-    print(e.error)
+    print(e)
     raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE, detail={
       "status":"FAIL",
-      "msg":e.error.message
+      "msg":e
     })
     
 @app.get('/create-invoice', response_description="create an invoice link")
